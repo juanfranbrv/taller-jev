@@ -219,6 +219,19 @@ details.file .code { border-radius: 0 0 11px 11px; }
 .cm-xray { border: 1px dashed var(--accent); border-radius: 10px; padding: 0.7rem 0.9rem; display: flex; flex-direction: column; gap: 0.45rem; }
 .cm-json { font-family: var(--font-mono); font-size: 0.75rem; color: var(--muted); overflow-wrap: anywhere; }
 
+/* Por dentro: el servidor cartero */
+.cartero { display: flex; flex-direction: column; gap: 0.9rem; border-top: 1px dashed var(--line); padding-top: 1rem; }
+.cita { margin: 0; border-left: 4px solid var(--accent); background: var(--accent-soft); padding: 0.7rem 1rem; border-radius: 0 10px 10px 0; font-size: 0.95rem; }
+.cita code { background: var(--surface); }
+.cartero-flow .box { display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.92rem; }
+.cartero-flow .box.jev p { color: inherit; }
+.cartero-flow .box.jev strong { font-size: 1.15rem; overflow-wrap: anywhere; }
+.cartero-flow .sin, .cartero-flow .con { font-family: var(--font-mono); font-size: 0.75rem; font-weight: 600; margin-top: auto; }
+.cartero-flow .sin { color: var(--muted); }
+.cartero-flow .con { color: var(--heat); }
+.ejercicio > li { margin-bottom: 0.3rem; }
+.ejercicio ul { margin-top: 0.3rem; }
+
 /* Serpiente a contrarreloj */
 .sn { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 1rem; display: flex; flex-direction: column; gap: 0.9rem; }
 .sn-boards { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
@@ -526,6 +539,56 @@ r.usage.input_tokens                <span class="cm"># para calcular el coste</s
         <li>Pega tu clave en <code>.env</code>, ejecuta <code>python servidor.py</code> y abre <code>http://localhost:8000</code>. Si algo falla, cuéntaselo al agente.</li>
         <li><b>Mira las tripas:</b> ¿cuántos ms tarda? ¿En qué mensaje duda más? ¿Qué pasa con un mensaje de tres párrafos, o en inglés? Busca una <b>frase trampa</b> que Jev clasifique mal con confianza alta.</li>
       </ol>
+
+      <div class="cartero" id="cartero">
+        <h3 style="font-size:1.15rem">Por dentro: ¿por qué hay un servidor en medio?</h3>
+        <p>El prompt pide esto, que es lo más importante de toda la arquitectura:</p>
+        <blockquote class="cita">Un endpoint <code>POST /jev</code> que reenvía el cuerpo tal cual a <code>https://api.typesafe.ai/v1/systemone</code> con la cabecera <code>Authorization: Bearer &lt;clave&gt;</code> y <code>Content-Type: application/json</code>.</blockquote>
+        <p>Tu página nunca habla con Jev. Habla con <b>tu servidor</b>, y tu servidor hace de <b>cartero</b>:</p>
+        <div class="flow cartero-flow">
+          <div class="box"><p class="eyebrow">1 · Navegador</p><p><code>index.html</code> monta la pregunta (<code>state</code> + <code>questions</code>) y la envía a <code>/jev</code>.</p><p class="sin">Sin clave</p></div>
+          <span class="arrow" aria-hidden="true">→</span>
+          <div class="box"><p class="eyebrow">2 · Tu servidor</p><p><code>servidor.py</code> no toca el paquete. Le pega la clave, pone en marcha el cronómetro y lo reenvía.</p><p class="con">Aquí vive la clave</p></div>
+          <span class="arrow" aria-hidden="true">→</span>
+          <div class="box jev"><p class="eyebrow" style="color:inherit;opacity:.8">3 · Jev</p><strong>api.typesafe.ai</strong><p>Comprueba la clave, decide y contesta.</p></div>
+        </div>
+        <p class="muted" style="font-size:0.92rem">La respuesta hace el camino de vuelta: Jev → servidor (que añade los milisegundos) → navegador (que la pinta en la cinta y en Rayos X).</p>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Trozo de la frase</th><th>Qué significa</th></tr></thead>
+            <tbody>
+              <tr><td><code>endpoint POST /jev</code></td><td>Una dirección de tu propio servidor (<code>localhost:8000/jev</code>) a la que la página <b>envía</b> datos. <code>GET</code> es «dame algo»; <code>POST</code> es «toma esto».</td></tr>
+              <tr><td><code>reenvía el cuerpo tal cual</code></td><td>El JSON que monta la página viaja idéntico hasta Jev. El servidor es un cartero: no abre el paquete ni lo cambia.</td></tr>
+              <tr><td><code>Authorization: Bearer &lt;clave&gt;</code></td><td>Una <b>cabecera</b> es una etiqueta pegada por fuera del paquete. Esta dice «el portador (<i>bearer</i>) tiene permiso». Es tu carné: Jev sabe quién eres y a quién cobrar.</td></tr>
+              <tr><td><code>Content-Type: application/json</code></td><td>Otra etiqueta: «lo que va dentro es JSON». Sin ella, Jev no sabría cómo leer el paquete.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p><b>¿Y por qué no pone la clave la propia página?</b> Porque <b>todo lo que llega al navegador lo puede ver cualquiera</b>. Pulsa F12 en cualquier web y verás su código. Si la clave estuviera en <code>index.html</code>, cualquiera podría copiarla y gastar a tu nombre. Es como un restaurante: tú le pides al camarero, el camarero lleva la comanda a la cocina, y tú nunca entras en la cocina.</p>
+
+        <h3 style="font-size:1.05rem">Ejercicio · Sigue el paquete <span class="tag">15 min · sin código</span></h3>
+        <p>Con tu cinta funcionando. <b>Antes de cada paso, apunta tu predicción.</b></p>
+        <ol class="ejercicio">
+          <li><b>Míralo pasar.</b> Pulsa F12, ve a la pestaña <b>Red</b> (<i>Network</i>) y escribe <code>jev</code> en el filtro. Arranca la cinta y haz clic en una de las peticiones:
+            <ul>
+              <li>¿A qué dirección va: a <code>api.typesafe.ai</code> o a <code>localhost:8000</code>?</li>
+              <li>En <b>Carga útil</b>, ¿qué ves? Compáralo con lo «enviado» en Rayos X.</li>
+              <li>En <b>Encabezados</b>, ¿aparece <code>Authorization</code>?</li>
+              <li>En <b>Respuesta</b>, ¿dónde están las probabilidades y los milisegundos?</li>
+            </ul>
+          </li>
+          <li><b>Busca tu clave.</b> En DevTools, pulsa Ctrl+Mayús+F (buscar en todo) y escribe los primeros caracteres de tu clave. ¿Aparece en algún sitio?</li>
+          <li><b>Rómpelo a propósito.</b>
+            <ul>
+              <li>Cambia una letra de la clave en <code>.env</code> y reinicia el servidor. ¿Qué sale en Rayos X? ¿Quién ha dicho que no: la página, el servidor o Jev?</li>
+              <li>Ahora para el servidor (Ctrl+C en su terminal) con la página abierta. ¿La cinta sigue clasificando?</li>
+            </ul>
+          </li>
+          <li><b>¿Dónde se va el tiempo?</b> El terminal del servidor escribe una línea por llamada con los ms que tardó Jev. Compáralos con la columna <b>Tiempo</b> de la pestaña Red. La diferencia es el viaje de tu navegador a tu servidor. ¿Es grande o pequeña?</li>
+        </ol>
+        <p class="deliver"><b>Para cerrar:</b> un compañero dice «quito el servidor y pongo la clave en <code>index.html</code>, que es más fácil, y luego lo subo a GitHub Pages». ¿Qué le contestas? <span class="muted">(Pista: esta misma página está en GitHub Pages. Pulsa F12.)</span></p>
+      </div>
+
       <h3 style="font-size:1.05rem">Sube de nivel (un prompt cada uno)</h3>
       <ol>
         <li><b>Tu tema:</b> «Cambia los mensajes y las cajas por comentarios de un directo de Twitch: pregunta, broma, insulto, spam. Describe bien cada caja».</li>
@@ -874,6 +937,7 @@ ARQUITECTURA (no la cambies)
   · Sirve index.html en http://localhost:8000.
   · Tiene un endpoint POST /jev que reenvía el cuerpo tal cual a https://api.typesafe.ai/v1/systemone con la cabecera "Authorization: Bearer <clave>" y "Content-Type: application/json".
   · Mide cuánto tarda la llamada en milisegundos y devuelve la respuesta de Jev junto con ese tiempo.
+  · Escribe en el terminal una línea por cada llamada, por ejemplo: «→ /jev  ← 200 en 284 ms».
   · La clave nunca llega al navegador.
 - index.html: un único archivo con HTML, CSS y JavaScript, sin librerías externas.
 - Crea también un .env con TYPESAFE_API_KEY=pega_aqui_tu_clave y un .gitignore que incluya .env.
