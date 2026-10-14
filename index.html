@@ -205,6 +205,20 @@ details.file .code { border-radius: 0 0 11px 11px; }
 .em-log .c { font-family: var(--font-mono); font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
 @media (max-width: 520px) { .em-e { font-size: 1.45rem; } .em-pond { height: 300px; } }
 
+/* Boceto de la cinta de Jev */
+.cinta-mock { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 1rem; display: flex; flex-direction: column; gap: 0.8rem; }
+.cm-score { display: flex; flex-wrap: wrap; gap: 0.4rem 1.2rem; font-family: var(--font-mono); font-size: 0.8rem; color: var(--muted); }
+.cm-score b { color: var(--ink); font-size: 1.1rem; }
+.cm-belt { position: relative; height: 3.2rem; border-radius: 10px; overflow: hidden; background: repeating-linear-gradient(90deg, var(--bg) 0 18px, var(--accent-soft) 18px 20px); border: 1px solid var(--line); }
+.cm-msg { position: absolute; top: 50%; left: 0; transform: translate(-110%, -50%); white-space: nowrap; font-size: 0.82rem; font-weight: 600; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 0.25rem 0.55rem; animation: cm-run 6s linear calc(var(--i) * -2s) infinite; }
+.cm-gate { position: absolute; right: 18%; top: 0; bottom: 0; width: 3rem; display: grid; place-items: center; background: var(--accent); color: var(--surface); font: 800 0.85rem var(--font-display); letter-spacing: 0.06em; }
+@keyframes cm-run { 0% { left: 0; transform: translate(-110%, -50%); opacity: 1; } 70% { left: 78%; transform: translate(-100%, -50%); opacity: 1; } 78% { left: 82%; transform: translate(-50%, 60%); opacity: 0; } 100% { left: 82%; opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .cm-msg { animation: none; transform: translate(0, -50%); } .cm-msg[style*="--i:1"] { left: 30%; } .cm-msg[style*="--i:2"] { left: 0; display: none; } }
+.cm-bins { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
+.cm-bins div { border: 1px solid var(--line); border-top: 4px solid var(--c); border-radius: 10px; padding: 0.45rem 0.7rem; font-weight: 600; font-size: 0.9rem; display: flex; justify-content: space-between; gap: 0.4rem; min-width: 0; }
+.cm-xray { border: 1px dashed var(--accent); border-radius: 10px; padding: 0.7rem 0.9rem; display: flex; flex-direction: column; gap: 0.45rem; }
+.cm-json { font-family: var(--font-mono); font-size: 0.75rem; color: var(--muted); overflow-wrap: anywhere; }
+
 /* Serpiente a contrarreloj */
 .sn { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 1rem; display: flex; flex-direction: column; gap: 0.9rem; }
 .sn-boards { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
@@ -478,6 +492,51 @@ r.usage.input_tokens                <span class="cm"># para calcular el coste</s
     <div class="body">
       <h3>¡Hola, Jev!</h3>
       <p class="goal">Conectarte a Jev, hacerle tus primeras preguntas y ver lo rápido que responde.</p>
+      <p>Dos caminos: <b>A, sin código</b> (una web hecha con un prompt) o <b>B, con un script de Python</b>. Elige uno.</p>
+
+      <h3 style="font-size:1.15rem">Opción A · La cinta de Jev <span class="tag">sin código</span></h3>
+      <p>Una cinta transportadora lleva mensajes del buzón de una tienda online. Al pasar por la puerta <b>JEV</b>, cada uno salta a su caja en unas décimas de segundo. Haz clic en cualquiera y verás las <b>tripas</b>: lo que se envió, lo que volvió y cuánto tardó.</p>
+      <div class="cinta-mock" aria-label="Boceto de la cinta de Jev">
+        <div class="cm-score"><span><b>284</b> ms última</span><span><b>3,4</b> msg/s</span><span><b>3 920</b> tokens</span><span><b>0,0002</b> $</span></div>
+        <div class="cm-belt">
+          <span class="cm-msg" style="--i:0">¡Me han cobrado dos veces!</span>
+          <span class="cm-msg" style="--i:1">¿Tenéis la talla M?</span>
+          <span class="cm-msg" style="--i:2">GANA 5000 € DESDE CASA</span>
+          <span class="cm-gate">JEV</span>
+        </div>
+        <div class="cm-bins"><div style="--c:var(--bad)">Urgente <b>4</b></div><div style="--c:var(--ok)">Normal <b>7</b></div><div style="--c:var(--warn)">Spam <b>3</b></div></div>
+        <div class="cm-xray">
+          <p class="eyebrow">Rayos X · «¡Me han cobrado dos veces!»</p>
+          <div class="row"><span class="k">urgente</span><div class="bar"><i style="--p:.93"></i></div><span class="v">0.93</span></div>
+          <div class="row"><span class="k">normal</span><div class="bar"><i style="--p:.05"></i></div><span class="v">0.05</span></div>
+          <div class="row"><span class="k">spam</span><div class="bar"><i style="--p:.02"></i></div><span class="v">0.02</span></div>
+          <p class="cm-json">→ {"state": {"mensaje": "¡Me han cobrado…"}, "questions": {…}}<br>← {"choice": "urgente", "confidence": 0.9} · 284 ms</p>
+        </div>
+      </div>
+      <p class="muted" style="font-size:0.9rem">Boceto: así quedará más o menos. Los números son de ejemplo.</p>
+      <ol>
+        <li>Necesitas Python instalado (no hay que instalar librerías), tu clave de <a href="https://console.typesafe.ai/keys" target="_blank" rel="noopener">console.typesafe.ai/keys</a> y tu agente de código (Claude Code, Cursor…).</li>
+        <li>Abre una carpeta vacía, pega este prompt y deja que lo construya:</li>
+      </ol>
+      <details class="file" open>
+        <summary>Prompt de <b>La cinta de Jev</b></summary>
+        <div class="code"><span class="label">prompt</span><button class="copy" type="button">Copiar</button><pre style="white-space:pre-wrap"><code data-src="src-cinta"></code></pre></div>
+      </details>
+      <ol start="3">
+        <li>Pega tu clave en <code>.env</code>, ejecuta <code>python servidor.py</code> y abre <code>http://localhost:8000</code>. Si algo falla, cuéntaselo al agente.</li>
+        <li><b>Mira las tripas:</b> ¿cuántos ms tarda? ¿En qué mensaje duda más? ¿Qué pasa con un mensaje de tres párrafos, o en inglés? Busca una <b>frase trampa</b> que Jev clasifique mal con confianza alta.</li>
+      </ol>
+      <h3 style="font-size:1.05rem">Sube de nivel (un prompt cada uno)</h3>
+      <ol>
+        <li><b>Tu tema:</b> «Cambia los mensajes y las cajas por comentarios de un directo de Twitch: pregunta, broma, insulto, spam. Describe bien cada caja».</li>
+        <li><b>Semáforo:</b> «Añade un deslizador de umbral. Si la confianza de Jev está por debajo, el mensaje va a una caja gris, <i>Revisión humana</i>. Muestra qué porcentaje se automatiza».</li>
+        <li><b>Carrera de modos:</b> «Añade tres modos: una a una, todas a la vez en paralelo, y todo en una sola llamada (todos los mensajes en el <code>state</code> y un <code>choice</code> por mensaje). Compara el tiempo total en una tabla».</li>
+        <li><b>Más preguntas:</b> «En la misma llamada, añade un <code>noul</code> "¿falta al respeto?" y un <code>score</code> de enfado con 3 niveles. Muéstralos como pegatinas sobre cada mensaje». ¿Sube la latencia?</li>
+        <li><b>Contra un LLM:</b> «Añade una segunda cinta que clasifica los mismos mensajes con un LLM vía OpenRouter, pidiéndole una sola palabra. Cuenta las respuestas que no se pueden usar tal cual».</li>
+      </ol>
+      <p class="deliver"><b>Entregable A:</b> captura de tu cinta con Rayos X abierto en el mensaje en el que Jev más dudó, y tu mejor frase trampa.</p>
+
+      <h3 style="font-size:1.15rem">Opción B · Script de Python</h3>
       <ol>
         <li>Sigue los pasos de <a href="#prepara">Prepárate</a>.</li>
         <li>Guarda el script <code>hola_jev.py</code> (abajo) en tu carpeta y ejecútalo: <code>python hola_jev.py</code></li>
@@ -493,7 +552,7 @@ r.usage.input_tokens                <span class="cm"># para calcular el coste</s
         <li><b>Cronómetro:</b> pasa de 3 a 10 preguntas en la misma llamada. ¿Cuánto sube el tiempo?</li>
         <li><b>Caza del error:</b> encuentra una frase en la que Jev se equivoque <b>con mucha confianza</b>. Pistas: sarcasmo, dobles negaciones, contar letras, fechas.</li>
       </ol>
-      <p class="deliver"><b>Entregable:</b> captura del terminal con tu detector funcionando y tu mejor «frase trampa».</p>
+      <p class="deliver"><b>Entregable B:</b> captura del terminal con tu detector funcionando y tu mejor «frase trampa».</p>
     </div>
   </article>
 
@@ -805,6 +864,58 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+</script>
+<script type="text/plain" id="src-cinta">
+Quiero una página web llamada «La cinta de Jev» que muestre lo rápido que decide Jev, el modelo de TypeSafe, clasificando mensajes. Tiene que ser muy visual y enseñar las tripas de lo que está pasando.
+
+ARQUITECTURA (no la cambies)
+- servidor.py: solo con la librería estándar de Python, sin instalar nada con pip.
+  · Lee TYPESAFE_API_KEY del archivo .env de esta carpeta.
+  · Sirve index.html en http://localhost:8000.
+  · Tiene un endpoint POST /jev que reenvía el cuerpo tal cual a https://api.typesafe.ai/v1/systemone con la cabecera "Authorization: Bearer <clave>" y "Content-Type: application/json".
+  · Mide cuánto tarda la llamada en milisegundos y devuelve la respuesta de Jev junto con ese tiempo.
+  · La clave nunca llega al navegador.
+- index.html: un único archivo con HTML, CSS y JavaScript, sin librerías externas.
+- Crea también un .env con TYPESAFE_API_KEY=pega_aqui_tu_clave y un .gitignore que incluya .env.
+
+LA API DE JEV (documentación: https://docs.typesafe.ai/api)
+Cuerpo de la petición:
+{
+  "model": "jev-latest",
+  "state": { "mensaje": "texto del mensaje" },
+  "questions": {
+    "categoria": {
+      "type": "choice",
+      "instructions": "¿Qué tipo de mensaje es `mensaje` para el equipo de soporte de una tienda online?",
+      "criteria": {
+        "urgente": "Un problema grave que hay que atender ya: no puede pagar, le han cobrado mal, algo está roto.",
+        "normal": "Una consulta, sugerencia o agradecimiento sin prisa.",
+        "spam": "Publicidad, estafa o mensaje que no va dirigido a la tienda."
+      }
+    }
+  }
+}
+Respuesta:
+{
+  "model": "jev-1.13.0",
+  "answers": {
+    "categoria": { "type": "choice", "choice": "urgente",
+                   "probabilities": { "urgente": 0.93, "normal": 0.05, "spam": 0.02 },
+                   "confidence": 0.9 }
+  },
+  "usage": { "input_tokens": 180, "output_tokens": 20 }
+}
+
+LO QUE SE VE EN LA PÁGINA
+1. Una cinta transportadora animada, de izquierda a derecha, con 20 mensajes cortos y realistas del buzón de soporte de una tienda online. Mezcla urgentes, normales y spam, y pon 3 o 4 ambiguos a propósito. Cuando un mensaje llega a una «puerta» con el nombre JEV, se hace la llamada y el mensaje salta con una animación a una de tres cajas: Urgente, Normal o Spam. Cada caja muestra cuántos tiene.
+2. Panel «Rayos X»: al hacer clic en cualquier mensaje se ve el JSON exacto que se envió, el JSON exacto que volvió, barras de probabilidad por categoría, la confianza y los milisegundos. Mientras la cinta funciona, el panel muestra automáticamente el último mensaje clasificado.
+3. Marcador grande arriba: milisegundos de la última llamada, media, mensajes clasificados por segundo, tokens totales y coste acumulado (0,042 $ por millón de tokens de entrada; la salida es gratis).
+4. Una línea de tiempo debajo de la cinta, con una barra horizontal por llamada (desde que sale hasta que vuelve), para ver si las llamadas van una detrás de otra o a la vez.
+5. Controles: ▶ Empezar, ⏸ Pausa, 🔄 Reiniciar, un deslizador de velocidad de la cinta y una caja de texto para añadir tu propio mensaje a la cinta.
+
+Diseño limpio y con colores claros para cada caja. Si Jev devuelve un error (por ejemplo, 401 por una clave mala), enséñalo bien visible en el panel Rayos X en vez de romper la página.
+
+Cuando termines, explícame en pocos pasos cómo pegar mi clave y cómo arrancarlo.
 </script>
 <script type="text/plain" id="src-lab">
 """Mini-laboratorio · ¿Sabe Jev jugar al buscaminas?
